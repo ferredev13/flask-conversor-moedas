@@ -103,7 +103,7 @@
           <div class="col-md-4">
             <label for="amount" class="form-label">Valor</label>
             <!-- O 'value' é preenchido pelo Flask para manter o valor após a conversão/erro -->
-            <input type="text" class="form-control" id="amount" name="amount" placeholder="Ex: 100.50 (use ponto ou vírgula)" required value="{{ valor_input }}">
+            <input type="text" class="form-control" id="amount" name="amount" placeholder="Ex: 100.50 (use ponto ou vírgula)" required value="{{ valor_input if valor_input is not none else '' }}">
             <div class="invalid-feedback">Informe um valor válido.</div>
           </div>
 
