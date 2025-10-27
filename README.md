@@ -1,8 +1,10 @@
 # 💱 Conversor de Moedas com Flask
 
-Um **Conversor de Moedas** desenvolvido com o framework **Flask**, demonstrando o uso de rotas, templates e integração com APIs externas para consumo de dados em tempo real.  
+## 👨‍🏫 Sobre o Projeto
 
-Este projeto foi criado como parte de um **seminário da disciplina de Desenvolvimento Web**, com o objetivo de **apresentar as funcionalidades do Flask** e mostrar como ele pode ser utilizado na construção de aplicações web simples, dinâmicas e interativas.
+Este projeto foi apresentado como parte do seminário de Desenvolvimento Web, com foco em demonstrar de forma prática o potencial do Flask na criação de aplicações web.
+Um **Conversor de Moedas** desenvolvido com o framework **Flask**, demonstrando o uso de rotas, templates e integração com APIs externas para consumo de dados em tempo real.  
+O objetivo foi mostrar como o Flask facilita a integração entre backend e frontend, tornando o desenvolvimento ágil, modular e acessível para estudantes e iniciantes na área.
 
 ---
 
@@ -38,4 +40,8 @@ O Conversor de Moedas foi desenvolvido para ilustrar conceitos fundamentais do *
 - **Jinja2** – Template engine do Flask
 
 ---
+##👨‍💻 Autor
 
+Márcio Ferre Pereira
+📍 Projeto acadêmico desenvolvido para o seminário de Desenvolvimento Web
+🔗 GitHub:https://github.com/ferredev13
