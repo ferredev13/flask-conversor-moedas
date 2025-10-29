@@ -1,218 +1,84 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Conversor de Moedas</title>
-
-  <!-- Bootstrap CSS para um design moderno e responsivo -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #f8f9fa;
-      transition: background-color 0.4s, color 0.4s;
-      /* Define a altura mínima para centralização vertical */
-      min-height: 100vh; 
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .dark-mode {
-      background-color: #1e1e2e;
-      color: #e0e0e0;
-    }
-    
-    body.dark-mode ::placeholder {
-      color: #f0f0f0;  /* cinza bem clarinho */
-      opacity: 1;      /* garante que a cor seja aplicada corretamente */
-    }
-
-    .main-container {
-        /* Garante que o container principal fique no centro da tela e tenha espaço */
-        max-width: 750px; /* Aumentei um pouco a largura máxima */
-        width: 100%;
-        padding: 20px;
-    }
-
-    .converter-card {
-      background-color: #ffffff;
-      border-radius: 16px;
-      transition: background-color 0.4s, box-shadow 0.4s;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-      width: 100%; /* Garante que o card ocupe o espaço disponível */
-      margin-top: 30px; /* Separa o card do título */
-    }
-
-    .dark-mode .converter-card {
-      background-color: #2b2b3c;
-      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
-    }
-
-    .title-gradient {
-      background: linear-gradient(90deg, #007bff, #00d4ff);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text; 
-      margin: 0;
-    }
-
-    #toggleDarkMode {
-      transition: background-color 0.3s, color 0.3s;
-      border-radius: 8px;
-    }
-
-    .dark-mode select,
-    .dark-mode input {
-      background-color: #3a3a4a;
-      color: #f1f1f1;
-      border: 1px solid #555;
-    }
-
-    .dark-mode select:focus,
-    .dark-mode input:focus {
-      background-color: #4a4a5a;
-      border-color: #00d4ff;
-      color: #fff;
-    }
-
-    /* ESTILO CRÍTICO PARA ALINHAMENTO DO TÍTULO E BOTÃO */
-    .header-bar {
-        display: flex;
-        justify-content: space-between; /* CRÍTICO: Empurra o título para a esquerda e o botão para a direita */
-        align-items: center;
-        width: 100%;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversor de Moedas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
+<body class="bg-light">
 
-  <div class="main-container">
-    <!-- NOVO: Container que alinha Título e Botão nas extremidades -->
-    <div class="header-bar">
-      <h1 class="fw-bold title-gradient">💱 Conversor de Moedas</h1>
-      <button id="toggleDarkMode" class="btn btn-outline-dark">🌙 Modo Escuro</button>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+
+                <!-- Título -->
+                <div class="text-center mb-4">
+                    <h2>💱 Conversor de Moedas</h2>
+                    <p class="text-muted">Utilizando Flask + API de conversão de moedas</p>
+                </div>
+
+                <!-- Card principal -->
+                <div class="card shadow-sm border-0">
+                    <div class="card-body">
+
+                        <!-- Mensagens condicionais -->
+                        {% if resultado %}
+                            <div class="alert alert-{{ alert_type }} text-center" role="alert">
+                                {{ resultado }}
+                            </div>
+                        {% endif %}
+
+                        <!-- Formulário -->
+                        <form method="POST" class="needs-validation" novalidate>
+                            <div class="mb-3">
+                                <label for="amount" class="form-label">Valor:</label>
+                                <input type="text" id="amount" name="amount" class="form-control" placeholder="Ex: 100.00" 
+                                       value="{{ valor_input or '' }}" required>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="fromCurrency" class="form-label">De:</label>
+                                    <input type="text" id="fromCurrency" name="fromCurrency" maxlength="3" 
+                                           class="form-control text-uppercase" placeholder="Ex: USD" 
+                                           value="{{ moeda_origem_input or '' }}" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="toCurrency" class="form-label">Para:</label>
+                                    <input type="text" id="toCurrency" name="toCurrency" maxlength="3" 
+                                           class="form-control text-uppercase" placeholder="Ex: BRL" 
+                                           value="{{ moeda_destino_input or '' }}" required>
+                                </div>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">Converter</button>
+                            </div>
+                        </form>
+
+                        <!-- Resultado exibido apenas se conversão bem-sucedida -->
+                        {% if alert_type == 'success' %}
+                            <hr>
+                            <div class="text-center">
+                                <h5 class="text-success fw-bold">{{ resultado }}</h5>
+                            </div>
+                        {% endif %}
+
+                    </div>
+                </div>
+
+                <!-- Rodapé -->
+                <div class="text-center mt-4">
+                    <small class="text-muted">
+                        Projeto Flask demonstrativo — Conversor de Moedas <br>
+                        <span class="text-secondary">Desenvolvido para apresentação acadêmica</span>
+                    </small>
+                </div>
+
+            </div>
+        </div>
     </div>
-    
-    <div class="converter-card p-5">
-      <!-- O form envia os dados para a rota '/' do Flask via POST -->
-      <form method="POST" action="/" class="needs-validation" novalidate>
-        <div class="row g-3 align-items-end">
-          <div class="col-md-4">
-            <label for="amount" class="form-label">Valor</label>
-            <!-- O 'value' é preenchido pelo Flask para manter o valor após a conversão/erro -->
-            <input type="text" class="form-control" id="amount" name="amount" placeholder="Ex: 100.50 (use ponto ou vírgula)" required value="{{ valor_input if valor_input is not none else '' }}">
-            <div class="invalid-feedback">Informe um valor válido.</div>
-          </div>
 
-          <div class="col-md-4">
-            <label for="fromCurrency" class="form-label">De</label>
-            <select class="form-select" id="fromCurrency" name="fromCurrency" required>
-              <option value="">Selecione</option>
-              <!-- O 'selected' é preenchido pelo Flask para manter a opção escolhida -->
-              <option value="BRL" {% if moeda_origem_input == 'BRL' %} selected {% endif %}>Real (BRL)</option>
-              <option value="USD" {% if moeda_origem_input == 'USD' %} selected {% endif %}>Dólar (USD)</option>
-              <option value="EUR" {% if moeda_origem_input == 'EUR' %} selected {% endif %}>Euro (EUR)</option>
-              <option value="GBP" {% if moeda_origem_input == 'GBP' %} selected {% endif %}>Libra (GBP)</option>
-              <option value="JPY" {% if moeda_origem_input == 'JPY' %} selected {% endif %}>Iene (JPY)</option>
-            </select>
-            <div class="invalid-feedback">Escolha uma moeda de origem.</div>
-          </div>
-
-          <div class="col-md-4">
-            <label for="toCurrency" class="form-label">Para</label>
-            <select class="form-select" id="toCurrency" name="toCurrency" required>
-              <option value="">Selecione</option>
-              <!-- O 'selected' é preenchido pelo Flask para manter a opção escolhida -->
-              <option value="BRL" {% if moeda_destino_input == 'BRL' %} selected {% endif %}>Real (BRL)</option>
-              <option value="USD" {% if moeda_destino_input == 'USD' %} selected {% endif %}>Dólar (USD)</option>
-              <option value="EUR" {% if moeda_destino_input == 'EUR' %} selected {% endif %}>Euro (EUR)</option>
-              <option value="GBP" {% if moeda_destino_input == 'GBP' %} selected {% endif %}>Libra (GBP)</option>
-              <option value="JPY" {% if moeda_destino_input == 'JPY' %} selected {% endif %}>Iene (JPY)</option>
-            </select>
-            <div class="invalid-feedback">Escolha uma moeda de destino.</div>
-          </div>
-        </div>
-
-        <div class="text-center mt-4 d-grid gap-2 d-md-block">
-          <button type="submit" class="btn btn-primary px-4">Converter</button>
-          <button type="button" class="btn btn-secondary px-4" id="clearBtn">Limpar</button>
-        </div>
-      </form>
-
-{% if erro %}
-      <div id="error-message" class="alert alert-danger mt-4 text-center fw-bold">
-        {{ erro }}
-      </div>
-      {% endif %}
-
-      {% if resultado %}
-      <div id="result" class="alert alert-success mt-4 text-center fw-bold">
-        {{ resultado }}
-      </div>
-      {% endif %}
-
-  <!-- Bootstrap JS -->
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-  <script>
-    // Seus scripts JavaScript para modo escuro, validação de formulário e botão Limpar
-    const form = document.querySelector('form');
-    const toggleDarkMode = document.getElementById('toggleDarkMode');
-    const clearBtn = document.getElementById('clearBtn');
-    const resultDiv = document.getElementById('result');
-
-    // 1. Alternar Modo Escuro
-    toggleDarkMode.addEventListener('click', () => {
-      document.body.classList.toggle('dark-mode');
-      const isDark = document.body.classList.contains('dark-mode');
-      toggleDarkMode.textContent = isDark ? '☀️ Modo Claro' : '🌙 Modo Escuro';
-      toggleDarkMode.className = isDark ? 'btn btn-outline-light' : 'btn btn-outline-dark';
-    });
-
-    // 2. Validação de Formulário do Bootstrap
-    form.addEventListener('submit', (event) => {
-      if (!form.checkValidity()) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
-      form.classList.add('was-validated');
-    });
-
-    // 3. Script para o botão "Limpar"
-    clearBtn.addEventListener('click', () => {
-        form.reset();
-        form.classList.remove('was-validated'); // Remove a validação visual
-        // Redireciona para a página inicial (GET request) para limpar o resultado do Flask
-        window.location.href = '/'; 
-    });
-  </script>
-
-  <script>
-document.addEventListener('DOMContentLoaded', () => {
-  const body = document.body;
-  const themeToggle = document.getElementById('themeToggle');
-
-  // 1️⃣ Carrega o tema salvo (se existir)
-  const savedTheme = localStorage.getItem('theme');
-  if (savedTheme === 'dark') {
-    body.classList.add('dark-mode');
-    themeToggle.checked = true;
-  }
-
-  // 2️⃣ Detecta mudanças no toggle e salva
-  themeToggle.addEventListener('change', () => {
-    if (themeToggle.checked) {
-      body.classList.add('dark-mode');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      body.classList.remove('dark-mode');
-      localStorage.setItem('theme', 'light');
-    }
-  });
-});
-</script>
 </body>
 </html>
