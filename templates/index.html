@@ -1,84 +1,159 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Conversor de Moedas</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Bootstrap -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    />
+
+    <!-- Ícone -->
+    <link
+        rel="icon"
+        type="image/png"
+        href="https://cdn-icons-png.flaticon.com/512/2331/2331948.png"
+    />
+
+    <style>
+        :root {
+            --bg-color: #f8f9fa;
+            --text-color: #212529;
+            --card-bg: #ffffff;
+        }
+
+        body.dark-mode {
+            --bg-color: #1e1e1e;
+            --text-color: #f1f1f1;
+            --card-bg: #2c2c2c;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-toggle {
+            background-color: transparent;
+            border: 1px solid var(--text-color);
+            color: var(--text-color);
+            border-radius: 50px;
+            font-size: 0.9rem;
+            padding: 4px 12px;
+            transition: 0.3s;
+        }
+
+        .btn-toggle:hover {
+            background-color: var(--text-color);
+            color: var(--bg-color);
+        }
+
+        footer {
+            font-size: 0.9rem;
+            text-align: center;
+            padding: 10px;
+            color: var(--text-color);
+            opacity: 0.7;
+            margin-top: 30px;
+        }
+    </style>
 </head>
-<body class="bg-light">
 
-    <div class="container py-5">
-        <div class="row justify-content-center">
-            <div class="col-md-6">
+<body>
+    <div class="container py-4">
+        <div class="text-center mb-4">
+            <h2 class="fw-bold text-primary">
+                <img src="https://cdn-icons-png.flaticon.com/512/10384/10384429.png" width="40" />
+                Conversor de Moedas
+            </h2>
+            <button class="btn-toggle mt-2" id="toggleMode">Alterar Tema</button>
+        </div>
 
-                <!-- Título -->
-                <div class="text-center mb-4">
-                    <h2>💱 Conversor de Moedas</h2>
-                    <p class="text-muted">Utilizando Flask + API de conversão de moedas</p>
-                </div>
+        <div class="card mx-auto p-4" style="max-width: 700px;">
+            <form method="POST">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label for="amount" class="form-label">Valor</label>
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="amount"
+                            name="amount"
+                            value="{{ valor_input }}"
+                            placeholder="Ex: 1000"
+                        />
+                    </div>
 
-                <!-- Card principal -->
-                <div class="card shadow-sm border-0">
-                    <div class="card-body">
+                    <div class="col-md-4">
+                        <label for="fromCurrency" class="form-label">De</label>
+                        <select class="form-select" id="fromCurrency" name="fromCurrency">
+                            {% for code, name in moedas %}
+                            <option value="{{ code }}" {% if moeda_origem_input == code %}selected{% endif %}>
+                                {{ name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-                        <!-- Mensagens condicionais -->
-                        {% if resultado %}
-                            <div class="alert alert-{{ alert_type }} text-center" role="alert">
-                                {{ resultado }}
-                            </div>
-                        {% endif %}
-
-                        <!-- Formulário -->
-                        <form method="POST" class="needs-validation" novalidate>
-                            <div class="mb-3">
-                                <label for="amount" class="form-label">Valor:</label>
-                                <input type="text" id="amount" name="amount" class="form-control" placeholder="Ex: 100.00" 
-                                       value="{{ valor_input or '' }}" required>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-md-6 mb-3">
-                                    <label for="fromCurrency" class="form-label">De:</label>
-                                    <input type="text" id="fromCurrency" name="fromCurrency" maxlength="3" 
-                                           class="form-control text-uppercase" placeholder="Ex: USD" 
-                                           value="{{ moeda_origem_input or '' }}" required>
-                                </div>
-                                <div class="col-md-6 mb-3">
-                                    <label for="toCurrency" class="form-label">Para:</label>
-                                    <input type="text" id="toCurrency" name="toCurrency" maxlength="3" 
-                                           class="form-control text-uppercase" placeholder="Ex: BRL" 
-                                           value="{{ moeda_destino_input or '' }}" required>
-                                </div>
-                            </div>
-
-                            <div class="d-grid">
-                                <button type="submit" class="btn btn-primary">Converter</button>
-                            </div>
-                        </form>
-
-                        <!-- Resultado exibido apenas se conversão bem-sucedida -->
-                        {% if alert_type == 'success' %}
-                            <hr>
-                            <div class="text-center">
-                                <h5 class="text-success fw-bold">{{ resultado }}</h5>
-                            </div>
-                        {% endif %}
-
+                    <div class="col-md-4">
+                        <label for="toCurrency" class="form-label">Para</label>
+                        <select class="form-select" id="toCurrency" name="toCurrency">
+                            {% for code, name in moedas %}
+                            <option value="{{ code }}" {% if moeda_destino_input == code %}selected{% endif %}>
+                                {{ name }}
+                            </option>
+                            {% endfor %}
+                        </select>
                     </div>
                 </div>
 
-                <!-- Rodapé -->
                 <div class="text-center mt-4">
-                    <small class="text-muted">
-                        Projeto Flask demonstrativo — Conversor de Moedas <br>
-                        <span class="text-secondary">Desenvolvido para apresentação acadêmica</span>
-                    </small>
+                    <button type="submit" class="btn btn-primary">Converter</button>
+                    <button type="reset" class="btn btn-secondary">Limpar</button>
                 </div>
+            </form>
 
+            {% if resultado %}
+            <div class="alert alert-{{ alert_type }} mt-4 text-center" role="alert">
+                {{ resultado }}
             </div>
+            {% endif %}
         </div>
+
+        <footer>
+            <p>
+                Conversor de Moedas v1.3 | Desenvolvido com Flask e Bootstrap |
+                © {{ 2025 }} - Todos os direitos reservados
+            </p>
+        </footer>
     </div>
 
+    <!-- Script modo claro/escuro -->
+    <script>
+        const toggleBtn = document.getElementById("toggleMode");
+        const body = document.body;
+
+        // Carrega o tema salvo
+        if (localStorage.getItem("theme") === "dark") {
+            body.classList.add("dark-mode");
+        }
+
+        // Alterna entre temas
+        toggleBtn.addEventListener("click", () => {
+            body.classList.toggle("dark-mode");
+            localStorage.setItem("theme", body.classList.contains("dark-mode") ? "dark" : "light");
+        });
+    </script>
 </body>
 </html>

@@ -1,19 +1,35 @@
+# ---------------------------------------------------------------------
+# ARQUIVO: app.py
+# DESCRIÇÃO: Aplicação Flask para conversão de moedas utilizando a API CurrencyLayer.
+# AUTOR: [Seu Nome]
+# ---------------------------------------------------------------------
+
 from flask import Flask, render_template, request
 import requests
 import os
 import traceback
+from dotenv import load_dotenv
+
+# ---------------------------------------------------------------------
+# CONFIGURAÇÕES INICIAIS
+# ---------------------------------------------------------------------
+# Carrega variáveis do arquivo .env
+load_dotenv()
 
 app = Flask(__name__)
 
-# ---------------------------------------------------------------------
-# CONFIGURAÇÕES
-# ---------------------------------------------------------------------
-API_KEY = os.getenv("CURRENCY_API_KEY")  # Pega a chave da variável de ambiente (se existir)
+# Lê a chave da API a partir do arquivo .env
+API_KEY = os.getenv("API_KEY")
+
 
 # ---------------------------------------------------------------------
 # FUNÇÃO PARA VALIDAR E CONVERTER VALORES
 # ---------------------------------------------------------------------
 def parse_amount(valor_raw):
+    """
+    Converte o valor informado pelo usuário (string) em float,
+    aceitando vírgula ou ponto decimal.
+    """
     try:
         valor_raw = valor_raw.replace(",", ".")  # aceita vírgula ou ponto
         valor = float(valor_raw)
@@ -23,63 +39,66 @@ def parse_amount(valor_raw):
 
 
 # ---------------------------------------------------------------------
-# FUNÇÃO PARA TENTAR USAR A API CURRENCY LAYER (caso tenha API_KEY)
+# FUNÇÃO PARA USAR A API CURRENCY LAYER (COM CHAVE)
 # ---------------------------------------------------------------------
-def try_currencylayer(from_cur, to_cur, amount):
+def convert_currency(from_cur, to_cur, amount):
+    """
+    Converte um valor de uma moeda para outra utilizando a API CurrencyLayer.
+
+    A API gratuita da CurrencyLayer retorna apenas taxas baseadas no USD.
+    Por isso, são tratados três cenários:
+      1. USD -> outra moeda
+      2. outra moeda -> USD
+      3. moeda -> moeda (nenhuma é USD)
+    """
     try:
         url = f"http://api.currencylayer.com/live?access_key={API_KEY}"
         response = requests.get(url, timeout=10)
-        response.raise_for_status()  # Verifica status HTTP
         data = response.json()
 
-        if not isinstance(data, dict):
-            return False, "Resposta inesperada da API.", "CurrencyLayer - formato inválido"
-
+        # Validação de retorno da API
         if not data.get("success"):
-            return False, data.get("error", {}).get("info", "Erro desconhecido"), "CurrencyLayer falhou"
+            return False, data.get("error", {}).get("info", "Erro desconhecido")
 
-        rates = data.get("quotes", {})
-        from_rate = rates.get(f"USD{from_cur}")
-        to_rate = rates.get(f"USD{to_cur}")
+        rates = data["quotes"]
 
-        if not from_rate or not to_rate:
-            return False, "Moeda não encontrada na API.", "CurrencyLayer - Moeda inválida"
+        # ------------------------------
+        # CASO 1: USD -> outra moeda
+        # ------------------------------
+        if from_cur == "USD":
+            to_rate = rates.get(f"USD{to_cur}")
+            if not to_rate:
+                return False, f"Moeda de destino '{to_cur}' não encontrada na API."
+            converted = amount * to_rate
 
-        converted = amount / from_rate * to_rate
-        return True, converted, "CurrencyLayer OK"
+        # ------------------------------
+        # CASO 2: outra moeda -> USD
+        # ------------------------------
+        elif to_cur == "USD":
+            from_rate = rates.get(f"USD{from_cur}")
+            if not from_rate:
+                return False, f"Moeda de origem '{from_cur}' não encontrada na API."
+            converted = amount / from_rate
 
-    except requests.exceptions.RequestException as e:
-        return False, f"Erro de conexão com a API: {e}", "CurrencyLayer - conexão falhou"
+        # ------------------------------
+        # CASO 3: moeda -> moeda (nenhuma é USD)
+        # ------------------------------
+        else:
+            from_rate = rates.get(f"USD{from_cur}")
+            to_rate = rates.get(f"USD{to_cur}")
+
+            if not from_rate or not to_rate:
+                return False, "Moeda não encontrada na API."
+
+            # Converte primeiro para USD e depois para a moeda destino
+            converted = amount / from_rate * to_rate
+
+        return True, converted
+
     except Exception as e:
-        return False, f"Erro interno: {e}", "CurrencyLayer - exceção geral"
-
-
-# ---------------------------------------------------------------------
-# FUNÇÃO PARA TENTAR USAR exchangerate.host (sem chave)
-# ---------------------------------------------------------------------
-def try_exchangerate_host(from_cur, to_cur, amount):
-    try:
-        url = f"https://api.exchangerate.host/convert?from={from_cur}&to={to_cur}&amount={amount}"
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-        data = response.json()
-
-        if not isinstance(data, dict):
-            return False, "Resposta inesperada da API.", "exchangerate.host - formato inválido"
-
-        if not data.get("success"):
-            return False, "Erro na API exchangerate.host", "exchangerate.host falhou"
-
-        converted = data.get("result")
-        if converted is None:
-            return False, "Não foi possível obter o valor convertido.", "exchangerate.host - sem resultado"
-
-        return True, converted, "exchangerate.host OK"
-
-    except requests.exceptions.RequestException as e:
-        return False, f"Erro de conexão com a API: {e}", "exchangerate.host - conexão falhou"
-    except Exception as e:
-        return False, f"Erro interno: {e}", "exchangerate.host - exceção geral"
+        print("[ERRO INTERNO NA API]", e)
+        traceback.print_exc()
+        return False, "Erro interno ao acessar a API."
 
 
 # ---------------------------------------------------------------------
@@ -87,24 +106,46 @@ def try_exchangerate_host(from_cur, to_cur, amount):
 # ---------------------------------------------------------------------
 @app.route("/", methods=["GET", "POST"])
 def index():
+    """
+    Rota principal da aplicação Flask.
+    Recebe os dados do formulário, valida as entradas e realiza a conversão.
+    """
     resultado = None
     alert_type = None
-    valor_input = None
+    valor_input = ""
     moeda_origem_input = ""
     moeda_destino_input = ""
 
+    # Lista de moedas disponíveis no dropdown
+    moedas = [
+        ("USD", "Dólar (USD)"),
+        ("BRL", "Real (BRL)"),
+        ("EUR", "Euro (EUR)"),
+        ("GBP", "Libra (GBP)"),
+        ("JPY", "Iene (JPY)"),
+        ("CAD", "Dólar Canadense (CAD)"),
+        ("AUD", "Dólar Australiano (AUD)"),
+        ("CHF", "Franco Suíço (CHF)"),
+    ]
+
     if request.method == "POST":
         try:
-            # Lê campos do formulário
+            # ------------------------------
+            # LEITURA DOS DADOS DO FORMULÁRIO
+            # ------------------------------
             valor_raw = request.form.get("amount", "").strip()
             moeda_origem_input = request.form.get("fromCurrency", "").upper()
             moeda_destino_input = request.form.get("toCurrency", "").upper()
-
             valor_input = valor_raw
 
-            # =======================
-            # Validações básicas
-            # =======================
+            # ------------------------------
+            # VALIDAÇÕES INICIAIS
+            # ------------------------------
+            if not API_KEY:
+                resultado = "Chave de API não configurada. Defina API_KEY no arquivo .env."
+                alert_type = "danger"
+                raise ValueError(resultado)
+
             if not valor_raw or not moeda_origem_input or not moeda_destino_input:
                 resultado = "Preencha todos os campos."
                 alert_type = "warning"
@@ -122,38 +163,21 @@ def index():
                 alert_type = "warning"
                 raise ValueError(resultado)
 
-            # =======================
-            # 1️⃣ Tenta Currencylayer (se tiver API_KEY)
-            # =======================
-            if API_KEY:
-                ok, value_or_msg, debug = try_currencylayer(moeda_origem_input, moeda_destino_input, valor)
-                print("Currencylayer attempt:", debug)
-                if ok:
-                    converted = value_or_msg
-                    resultado = f"{valor:.2f} {moeda_origem_input} = {converted:.2f} {moeda_destino_input}"
-                    alert_type = "success"
-                    return render_template("index.html", **locals())
-                else:
-                    print("Currencylayer falhou:", value_or_msg)
+            # ------------------------------
+            # CHAMADA À API
+            # ------------------------------
+            ok, value_or_msg = convert_currency(moeda_origem_input, moeda_destino_input, valor)
 
-            # =======================
-            # 2️⃣ Fallback: exchangerate.host
-            # =======================
-            ok2, value_or_msg2, debug2 = try_exchangerate_host(moeda_origem_input, moeda_destino_input, valor)
-            print("exchangerate.host attempt:", debug2)
-            if ok2:
-                converted = value_or_msg2
-                resultado = f"{valor:.2f} {moeda_origem_input} = {converted:.2f} {moeda_destino_input}"
+            if ok:
+                resultado = f"{valor:.2f} {moeda_origem_input} = {value_or_msg:.2f} {moeda_destino_input}"
                 alert_type = "success"
             else:
-                resultado = f"Erro ao obter taxa: {value_or_msg2}"
+                resultado = f"Erro ao obter taxa: {value_or_msg}"
                 alert_type = "danger"
 
         except ValueError as e:
-            # Erros esperados (como valor inválido)
             print(f"[VALOR INVÁLIDO] {e}")
         except Exception as e:
-            # Erros inesperados — loga e mostra mensagem genérica
             resultado = "Erro inesperado ao processar a conversão. Tente novamente."
             alert_type = "danger"
             print(f"[ERRO INTERNO] {e}")
@@ -163,7 +187,7 @@ def index():
 
 
 # ---------------------------------------------------------------------
-# EXECUÇÃO
+# EXECUÇÃO DO APLICATIVO
 # ---------------------------------------------------------------------
 if __name__ == "__main__":
     app.run(debug=True)
