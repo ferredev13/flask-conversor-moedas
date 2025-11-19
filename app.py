@@ -1,7 +1,7 @@
 # ---------------------------------------------------------------------
 # ARQUIVO: app.py
 # DESCRIÇÃO: Aplicação Flask para conversão de moedas utilizando a API CurrencyLayer.
-# AUTOR: [Seu Nome]
+# AUTOR: [Márcio Ferre e Bruno Malosti]
 # ---------------------------------------------------------------------
 
 from flask import Flask, render_template, request
