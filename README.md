@@ -1,7 +1,7 @@
 # 💱 Conversor de Moedas — Flask + CurrencyLayer
 
 <p align="center">
-  <img src="assets/banner-conversor.png" alt="Banner do Projeto" width="100%">
+  <img src="assets/banner-conversor.jpg" alt="Banner do Projeto" width="100%">
 </p>
 
 Aplicação desenvolvida com **Flask** para conversão de moedas em tempo real utilizando a API **CurrencyLayer**.  
